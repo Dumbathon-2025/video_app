@@ -18,7 +18,6 @@ hands = mp_hands.Hands(
 
 motion_tracker = MotionTracker()
 
-
 def process(image):
     image.flags.writeable = False
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
