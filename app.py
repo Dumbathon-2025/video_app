@@ -31,6 +31,16 @@ hands = mp_hands.Hands(
 
 motion_tracker = MotionTracker()
 
+# Helper function to play motion audio with cooldown
+def play_motion_audio_if_ready():
+    global last_motion_time
+    current_time = time.time()
+    if current_time - last_motion_time > 3.0:
+        motion_sound.play()
+        last_motion_time = current_time
+        return True
+    return False
+
 def process(image):
     image.flags.writeable = False
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -117,28 +127,56 @@ webrtc_ctx = webrtc_streamer(
 
 # Speech Recognition Section
 st.markdown("---")
-st.subheader("🎤 Live Keyword Detection")
+st.subheader("🎤 Live Keyword Detection + Voice Trigger")
 
-# Initialize keyword listener
+# Initialize keyword listener and voice state
 if 'keyword_listener' not in st.session_state:
     keywords = ["hello", "stop", "start", "yes", "no", "help", "six", "seven", "67"]
     st.session_state.keyword_listener = KeywordListener(keywords)
     st.session_state.keyword_listener.start()
+    st.session_state.voice_six_detected = False
+    st.session_state.voice_six_time = 0
 
 # Display keywords
 st.write("**Listening for keywords:**", ", ".join(st.session_state.keyword_listener.keywords))
+st.info("🎯 **Voice Trigger**: Say 'six' then 'seven' OR just say '67' or 'six seven' to play audio!")
 
 # Check for detected keywords
 detected_keyword = st.session_state.keyword_listener.get_last_keyword()
+current_time = time.time()
+
 if detected_keyword:
     st.success(f"🎯 **Detected: {detected_keyword.upper()}**")
-    st.balloons()
+    
+    # Handle "67" or combined "six seven" - immediate trigger
+    if detected_keyword == "67":
+        # Direct trigger - play audio immediately
+        if play_motion_audio_if_ready():
+            st.balloons()
+            st.success("🎉 **AUDIO TRIGGERED BY VOICE!**")
+    
+    # Handle six-seven sequence
+    elif detected_keyword == "six":
+        st.session_state.voice_six_detected = True
+        st.session_state.voice_six_time = current_time
+        st.write("✅ 'Six' detected! Now say 'seven' within 3 seconds...")
+    
+    elif detected_keyword == "seven":
+        # Check if "six" was said recently (within 3 seconds)
+        if st.session_state.voice_six_detected and (current_time - st.session_state.voice_six_time < 3.0):
+            # Trigger audio!
+            if play_motion_audio_if_ready():
+                st.balloons()
+                st.success("🎉 **AUDIO TRIGGERED BY SIX+SEVEN!**")
+            st.session_state.voice_six_detected = False
+        else:
+            st.write("⚠️ Say 'six' first, then 'seven' within 3 seconds")
 else:
-    st.info("Listening... Speak one of the keywords above")
+    # Reset if timeout
+    if st.session_state.voice_six_detected and (current_time - st.session_state.voice_six_time > 3.0):
+        st.session_state.voice_six_detected = False
+        st.caption("⏱️ Voice combo timed out. Say 'six' again to start.")
 
 # Auto-refresh to check for new keywords
-st_autorefresh = st.empty()
-with st_autorefresh:
-    st.caption("🔄 Checking for keywords...")
-    time.sleep(0.5)
-    st.rerun()
+time.sleep(0.1)
+st.rerun()
