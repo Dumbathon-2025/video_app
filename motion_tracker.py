@@ -6,8 +6,8 @@ from collections import deque
 
 class MotionTracker:
     def __init__(self):
-        self.left_hand_history = deque(maxlen=8)  # Very short history
-        self.right_hand_history = deque(maxlen=8)
+        self.left_hand_history = deque(maxlen=6)  # Short history for 6-7 pattern
+        self.right_hand_history = deque(maxlen=6)
         self.alternating_detected = False
         self.detection_frames = 0  # Count frames where alternating is detected
         self.cooldown_frames = 0  # Frames to keep showing after detection

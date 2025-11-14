@@ -63,7 +63,7 @@ def process(image):
     
     # Display alternating motion detection
     if motion_tracker.alternating_detected:
-        cv2.putText(image, "ALTERNATING MOTION! 👋👋", (10, 100),
+        cv2.putText(image, "6 7! 👋👋", (10, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
     
     return cv2.flip(image, 1)
