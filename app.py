@@ -1,10 +1,12 @@
 import cv2
 import numpy as np
 import av
+import streamlit as st
 import mediapipe as mp
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 from gesture_detector import is_middle_finger_up
 from motion_tracker import MotionTracker
+from keyword_listener import KeywordListener
 import pygame
 import time
 
@@ -112,3 +114,31 @@ webrtc_ctx = webrtc_streamer(
     video_processor_factory=VideoProcessor,
     async_processing=True,
 )
+
+# Speech Recognition Section
+st.markdown("---")
+st.subheader("🎤 Live Keyword Detection")
+
+# Initialize keyword listener
+if 'keyword_listener' not in st.session_state:
+    keywords = ["hello", "stop", "start", "yes", "no", "help", "six", "seven", "67"]
+    st.session_state.keyword_listener = KeywordListener(keywords)
+    st.session_state.keyword_listener.start()
+
+# Display keywords
+st.write("**Listening for keywords:**", ", ".join(st.session_state.keyword_listener.keywords))
+
+# Check for detected keywords
+detected_keyword = st.session_state.keyword_listener.get_last_keyword()
+if detected_keyword:
+    st.success(f"🎯 **Detected: {detected_keyword.upper()}**")
+    st.balloons()
+else:
+    st.info("Listening... Speak one of the keywords above")
+
+# Auto-refresh to check for new keywords
+st_autorefresh = st.empty()
+with st_autorefresh:
+    st.caption("🔄 Checking for keywords...")
+    time.sleep(0.5)
+    st.rerun()
