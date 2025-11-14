@@ -3,6 +3,4 @@ streamlit_webrtc
 
 opencv-python
 mediapipe
-openai-whisper
-sounddevice
-scipy
+pygame

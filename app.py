@@ -5,6 +5,17 @@ import mediapipe as mp
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 from gesture_detector import is_middle_finger_up
 from motion_tracker import MotionTracker
+import pygame
+import time
+
+# Initialize pygame mixer for audio
+pygame.mixer.init()
+middle_finger_sound = pygame.mixer.Sound("sounds/middle_finger.wav")
+motion_sound = pygame.mixer.Sound("sounds/motion_67.wav")
+
+# Track last play time for debouncing
+last_middle_finger_time = 0
+last_motion_time = 0
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -56,15 +67,27 @@ def process(image):
     # Update motion tracker
     motion_tracker.update(left_hand_y, right_hand_y)
     
+    # Play audio for gestures (with 3 second cooldown)
+    global last_middle_finger_time, last_motion_time
+    current_time = time.time()
+    
     # Display detection message before flipping so text is backwards (funny!)
     if middle_finger_detected:
         cv2.putText(image, "MIDDLE FINGER DETECTED! 🖕", (10, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        # Play audio if enough time has passed (3 second cooldown)
+        if current_time - last_middle_finger_time > 3.0:
+            middle_finger_sound.play()
+            last_middle_finger_time = current_time
     
     # Display alternating motion detection
     if motion_tracker.alternating_detected:
         cv2.putText(image, "6 7! 👋👋", (10, 100),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+        # Play audio if enough time has passed (3 second cooldown)
+        if current_time - last_motion_time > 3.0:
+            motion_sound.play()
+            last_motion_time = current_time
     
     return cv2.flip(image, 1)
 
